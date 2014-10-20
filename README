@@ -1,0 +1,4 @@
+A framework that performs social activity in memory.
+- using the memory to add, update and remove the activity.
+- scheduler to persist between caching and jcr strorage.
+- using the exo caching more efficiently 

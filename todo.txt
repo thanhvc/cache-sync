@@ -1,0 +1,22 @@
+TODO list
+
+- individual data changes manage by the component in AbstractListData class
+
+- Implements the strategy to synchronous between memory and storage
+
++ Implementation Merger:
+
+- Data: Remove + Add + MoveUp >> Remove data change
+- Data: Remove + MoveUp >> Removed JCR
+- Data: Add + MoveUp >> Add JCR, remove MoveUp data change.
+
++ Implement Strategy
+
+Strategy 1. Each owner in asynch processing, ADD first, then Move 
+
+
+- implements LOG mechanism.
+
+- Implements hashCode, toString and equal method on SimpleDataChange
+
+

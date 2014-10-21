@@ -16,6 +16,7 @@
  */
 package com.list.sync.core.caching.data;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,7 +33,7 @@ import com.list.sync.core.caching.change.SimpleDataChange;
  */
 public abstract class AbstractListData<V, O> {
   /** defines the list keeps the data **/
-  private final List<V> list;
+  private final List<V> list = new ArrayList<V>();
   /** defines the owner data **/
   private final O listOwnerId;
   /** defines the list keeps the changes status **/
@@ -48,7 +49,13 @@ public abstract class AbstractListData<V, O> {
    * @param listOwnerId the identityId
    */
   public AbstractListData(final List<V> list, O listOwnerId) {
-    this.list = list;
+    this.list.addAll(list);
+    this.listOwnerId = listOwnerId;
+    this.listChanges = new LinkedList<DataChange<V, O>>();
+    this.it = listChanges.iterator();
+  }
+  
+  public AbstractListData(O listOwnerId) {
     this.listOwnerId = listOwnerId;
     this.listChanges = new LinkedList<DataChange<V, O>>();
     this.it = listChanges.iterator();
@@ -58,8 +65,16 @@ public abstract class AbstractListData<V, O> {
    * Gets the list of its wrapper 
    * @return
    */
-  protected List<V> getList() {
+  public List<V> getList() {
     return this.list;
+  }
+  
+  /**
+   * Gets the size of elements
+   * @return
+   */
+  public int size() {
+    return list.size();
   }
 
   /**
@@ -69,7 +84,7 @@ public abstract class AbstractListData<V, O> {
    * @param to the given to
    * @return the sublist
    */
-  List<V> subList(int from, int to) {
+  public List<V> subList(int from, int to) {
     return this.list.subList(from, to);
   }
   
@@ -234,6 +249,7 @@ public abstract class AbstractListData<V, O> {
     addChange(DataChange.Kind.DELETE, value, ownerId);
     afterRemove();
   }
+  
   
   /**
    * Adds the new changes to keep next processing.

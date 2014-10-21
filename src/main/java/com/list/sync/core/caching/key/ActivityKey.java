@@ -14,23 +14,48 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.list.sync.core.caching.data;
-
-import java.util.List;
+package com.list.sync.core.caching.key;
 
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
  *          exo@exoplatform.com
- * Oct 20, 2014  
+ * Oct 21, 2014  
  */
-public class ListActivityData extends AbstractListData<String, String> {
-  public ListActivityData(List<String> list, String ownerId) {
-    super(list, ownerId);
-  }
-  
-  public ListActivityData(String ownerId) {
-    super(ownerId);
+public class ActivityKey {
+
+  private final String id;
+
+  public ActivityKey(final String id) {
+    this.id = id;
   }
 
+  public String getId() {
+    return id;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ActivityKey)) {
+      return false;
+    }
+
+    ActivityKey that = (ActivityKey) o;
+
+    if (id != null ? !id.equals(that.id) : that.id != null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + (id != null ? id.hashCode() : 0);
+    return result;
+  }
 }

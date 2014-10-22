@@ -17,38 +17,38 @@
 package com.list.sync.core.caching;
 
 import java.util.List;
-
-import junit.framework.TestCase;
+import java.util.ListIterator;
 
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
-import org.exoplatform.social.core.identity.model.Identity;
 
+import com.list.sync.core.BaseTest;
+import com.list.sync.core.caching.change.DataChange;
 import com.list.sync.core.data.ActivityDataBuilder;
 import com.list.sync.core.data.CachedActivityData;
-import com.list.sync.core.data.CachedIdentityData;
+import com.list.sync.core.data.CommentDataBuilder;
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
  *          exo@exoplatform.com
  * Oct 20, 2014  
  */
-public class CachedListActivityTest extends TestCase {
-  
-  private Identity demo = CachedIdentityData.demo();
+public class ActivityTest extends BaseTest {
   
   @Override
-  protected void setUp() throws Exception {
-    super.setUp();
+  public void initData() {
     if (CachedActivityData.feedSize(demo) == 0) {
-      ActivityDataBuilder.initMore(50, demo);
+      ActivityDataBuilder.initMore(50, demo).inject();
+      List<ExoSocialActivity> feed = CachedActivityData.feed(demo, 0, 20);
+      ListIterator<ExoSocialActivity> it = feed.listIterator(feed.size() - 1);
+      while (it.hasPrevious()) {
+        ExoSocialActivity activity = it.previous();
+        CommentDataBuilder.initMore(10, activity, demo).inject();
+      }
     }
-    
   }
   
   @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
+  public void initConnecions() {}
   
   public void testFeed() {
     List<ExoSocialActivity> feed = CachedActivityData.feed(demo, 0, 20);
@@ -64,6 +64,34 @@ public class CachedListActivityTest extends TestCase {
     int got = CachedActivityData.feedSize(demo);
     assertEquals(50, got);
     
+  }
+  
+  public void testOwner() {
+    List<ExoSocialActivity> got = CachedActivityData.myActivities(demo, 0, 20);
+    assertEquals(20, got.size());
+  }
+  
+  public void testOwnerLoadMore() {
+    List<ExoSocialActivity> got = CachedActivityData.myActivities(demo, 20, 20);
+    assertEquals(20, got.size());
+  }
+  
+  public void testOwnerSize() {
+    int got = CachedActivityData.myActivitiesSize(demo);
+    assertEquals(50, got);
+  }
+  
+  public void testChanges() throws Exception {
+    List<DataChange<String, String>> changes = CachedActivityData.feedChangeList(demo);
+    assertEquals(69, changes.size());
+
+    //
+    changes = CachedActivityData.feedChangeList(demo, DataChange.Kind.ADD);
+    assertEquals(50, changes.size());
+
+    //
+    changes = CachedActivityData.feedChangeList(demo, DataChange.Kind.MOVE);
+    assertEquals(19, changes.size());
   }
 
 }

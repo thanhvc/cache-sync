@@ -14,48 +14,39 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.list.sync.core.caching.key;
+package com.list.sync.core;
+
+import junit.framework.TestCase;
+
+import org.exoplatform.social.core.identity.model.Identity;
+
+import com.list.sync.core.data.CachedIdentityData;
 
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
  *          exo@exoplatform.com
- * Oct 20, 2014  
+ * Oct 22, 2014  
  */
-public class IdentityKey implements CacheKey<String> {
+public abstract class BaseTest extends TestCase {
+  protected Identity demo = CachedIdentityData.demo();
+  protected Identity john = CachedIdentityData.john();
+  protected Identity mary = CachedIdentityData.mary();
+  protected Identity root = CachedIdentityData.root();
 
-  private final String id;
-  
-  public IdentityKey(String id) {
-    this.id = id;
-  }
-  
-  public String getKey() {
-    return id;
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    initData();
+    initConnecions();
   }
   
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof IdentityKey)) {
-      return false;
-    }
-
-    IdentityKey that = (IdentityKey) o;
-
-    if (id != null ? !id.equals(that.id) : that.id != null) {
-      return false;
-    }
-
-    return true;
+  protected void tearDown() throws Exception {
+    super.tearDown();
   }
-
-  @Override
-  public int hashCode() {
-    int result = 31 * (id != null ? id.hashCode() : 0);
-    return result;
-  }
-
+  
+  public abstract void initData();
+  
+  public abstract void initConnecions();
 }

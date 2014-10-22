@@ -16,6 +16,7 @@
  */
 package com.list.sync.core.caching.change;
 
+
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
@@ -59,12 +60,36 @@ public class SimpleDataChange<V, O> implements DataChange<V, O> {
     return this.revision;
   }
   
-  
-  //TODO implement the equals, hashCode and toString method
-  
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SimpleDataChange)) {
+      return false;
+    }
+
+    SimpleDataChange<?, ?> that = (SimpleDataChange<?, ?>) o;
+
+    if (data != null ? !data.equals(that.data) : that.data != null) {
+      return false;
+    }
+    
+    if (kind != null ? kind != that.kind : that.kind != null) {
+      return false;
+    }
+
+    return true;
+  }
+
   @Override
   public int hashCode() {
-    return super.hashCode();
+    return data.hashCode();
+  }
+  
+  @Override
+  public String toString() {
+    return "SimpleDataChange[data = " + this.data + ", kind = " + this.kind.toString() + ", revision = " + this.revision + "]";
   }
   
   public static class Builder<V, O> {

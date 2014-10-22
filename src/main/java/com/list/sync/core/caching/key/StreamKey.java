@@ -82,7 +82,7 @@ public class StreamKey {
       return false;
     }
     
-    if (type != null ? !type.equals(that.type) : that.type != null) {
+    if (type != null ? (type != that.type) : that.type != null) {
       return false;
     }
 
@@ -91,8 +91,7 @@ public class StreamKey {
 
   @Override
   public int hashCode() {
-    int result = super.hashCode();
-    result = 31 * result + (id != null ? id.hashCode() : 0);
+    int result = 31 * (id != null ? id.hashCode() : 0);
     result = 31 * result + (type != null ? type.hashCode() : 0);
     return result;
   }

@@ -54,8 +54,11 @@ public class ActivityKey {
 
   @Override
   public int hashCode() {
-    int result = super.hashCode();
-    result = 31 * result + (id != null ? id.hashCode() : 0);
-    return result;
+    return id.hashCode();
+  }
+  
+  @Override
+  public String toString() {
+    return "ActivityKey[id = " + this.id + "]";
   }
 }

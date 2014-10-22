@@ -71,9 +71,8 @@ public class ActivityDataBuilder {
   }
   
   public List<ExoSocialActivity> inject() {
-    ActivityManager manager = CommonsUtils.getService(ActivityManager.class);
     if (this.poster == null) {
-      return Collections.EMPTY_LIST;
+      return Collections.emptyList();
     }
     
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>(numberOfActivity);
@@ -94,11 +93,7 @@ public class ActivityDataBuilder {
       activity.setTemplateParams(templateParams);
       
       try {
-        if (streamOwner != null) {
-          manager.saveActivityNoReturn(this.streamOwner, activity);
-        } else {
-          manager.saveActivityNoReturn(this.poster, activity);
-        }
+        CachedActivityData.saveActivity(this.poster.getId(), activity);
         list.add(activity);
       } catch (Exception e) {
         LOG.error("can not save activity.", e);
@@ -109,7 +104,6 @@ public class ActivityDataBuilder {
   }
   
   public ExoSocialActivity injectOne() {
-    ActivityManager manager = CommonsUtils.getService(ActivityManager.class);
     if (this.poster == null) {
       return null;
     }
@@ -129,11 +123,7 @@ public class ActivityDataBuilder {
     activity.setTemplateParams(templateParams);
 
     try {
-      if (streamOwner != null) {
-        manager.saveActivityNoReturn(this.streamOwner, activity);
-      } else {
-        manager.saveActivityNoReturn(this.poster, activity);
-      }
+      CachedActivityData.saveActivity(this.poster.getId(), activity);
     } catch (Exception e) {
       LOG.error("can not save activity.", e);
     }

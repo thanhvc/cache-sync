@@ -65,9 +65,8 @@ public class CommentDataBuilder {
   }
   
   public List<ExoSocialActivity> inject() {
-    ActivityManager manager = CommonsUtils.getService(ActivityManager.class);
     if (this.commenter == null) {
-      return Collections.EMPTY_LIST;
+      return Collections.emptyList();
     }
     
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>(numberOfActivity);
@@ -81,9 +80,10 @@ public class CommentDataBuilder {
       
       comment.isComment(true);
       comment.setUserId(this.commenter.getId());
+      comment.setParentId(parent.getId());
       
       try {
-        manager.saveComment(parent, comment);
+        CachedActivityData.saveComment(commenter.getId(), comment);
         list.add(comment);
       } catch (Exception e) {
         LOG.error("can not save comment.", e);
@@ -94,7 +94,6 @@ public class CommentDataBuilder {
   }
   
   public ExoSocialActivity injectOne() {
-    ActivityManager manager = CommonsUtils.getService(ActivityManager.class);
     if (this.commenter == null) {
       return null;
     }
@@ -109,8 +108,10 @@ public class CommentDataBuilder {
     comment.isComment(true);
     comment.setUserId(this.commenter.getId());
     
+    comment.setParentId(parent.getId());
+    
     try {
-      manager.saveComment(parent, comment);
+      CachedActivityData.saveComment(commenter.getId(), comment);
     } catch (Exception e) {
       LOG.error("can not save comment.", e);
     }

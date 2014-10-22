@@ -16,11 +16,9 @@
  */
 package com.list.sync.core.caching.data;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 
 import com.list.sync.core.caching.change.DataChange;
 import com.list.sync.core.caching.change.SimpleDataChange;
@@ -33,13 +31,13 @@ import com.list.sync.core.caching.change.SimpleDataChange;
  */
 public abstract class AbstractListData<V, O> {
   /** defines the list keeps the data **/
-  private final List<V> list = new ArrayList<V>();
+  private final List<V> list = new LinkedList<V>();
   /** defines the owner data **/
   private final O listOwnerId;
   /** defines the list keeps the changes status **/
   private final List<DataChange<V, O>> listChanges;
   /** define the iterator of changes **/
-  private final Iterator<DataChange<V, O>> it;
+  private Iterator<DataChange<V, O>> it;
   /** define the current change**/
   private DataChange<V, O> current;
   
@@ -52,13 +50,11 @@ public abstract class AbstractListData<V, O> {
     this.list.addAll(list);
     this.listOwnerId = listOwnerId;
     this.listChanges = new LinkedList<DataChange<V, O>>();
-    this.it = listChanges.iterator();
   }
   
   public AbstractListData(O listOwnerId) {
     this.listOwnerId = listOwnerId;
     this.listChanges = new LinkedList<DataChange<V, O>>();
-    this.it = listChanges.iterator();
   }
   
   /**
@@ -97,6 +93,14 @@ public abstract class AbstractListData<V, O> {
   }
   
   /**
+   * Gets all of changes list
+   * @return the list
+   */
+  public List<DataChange<V, O>> getChangeList() {
+    return this.listChanges;
+  }
+  
+  /**
    * Checks has next element or not
    * 
    * @param kind the given kind of change
@@ -114,49 +118,47 @@ public abstract class AbstractListData<V, O> {
     
     return (this.current != null);
   }
+  
 
   /**
    * Gets the changes by DataChange.Kind
    * 
    * @param kind
-   * @param reverse
    * @return
    */
-  public Iterator<DataChange<V, O>> getChanges(final DataChange.Kind kind, boolean reverse) {
-    if (reverse) {
-      final ListIterator<DataChange<V, O>> it = listChanges.listIterator(listChanges.size());
-      
-      return new Iterator<DataChange<V, O>>() {
+  public Iterator<DataChange<V, O>> getChanges(final DataChange.Kind kind) {
+    this.it = listChanges.iterator();
+    return new Iterator<DataChange<V, O>>() {
 
-        public boolean hasNext() {
-          return it.hasPrevious();
-        }
+      public boolean hasNext() {
+        return checkNext(kind);
+      }
 
-        public DataChange<V, O> next() {
-          return it.previous();
-        }
+      public DataChange<V, O> next() {
+        return current;
+      }
 
-        public void remove() {
-          throw new UnsupportedOperationException();
-        }
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
 
-      };
-    } else {
-      return new Iterator<DataChange<V, O>>() {
-        public boolean hasNext() {
-          return checkNext(kind);
-        }
-
-        public DataChange<V, O> next() {
-          return current;
-        }
-
-        public void remove() {
-          throw new UnsupportedOperationException();
-        }
-
-      };
+    };
+  }
+  
+  /**
+   * Gets the changes list by DataChange.Kind
+   * 
+   * @param kind
+   * @return
+   */
+  public List<DataChange<V, O>> getChangeList(final DataChange.Kind kind) {
+    List<DataChange<V, O>> filted = new LinkedList<DataChange<V,O>>();
+    Iterator<DataChange<V, O>> iter = getChanges(kind);
+    
+    while(iter.hasNext()) {
+      filted.add(iter.next());
     }
+    return filted;
   }
   
   /**
@@ -185,10 +187,12 @@ public abstract class AbstractListData<V, O> {
    * @param position
    */
   public void putRef(int index, V value, O ownerId) {
-    beforePutRef();
-    this.list.add(index, value);
-    addChange(DataChange.Kind.ADD_REF, value, ownerId);
-    afterPutRef();
+    if (this.list.indexOf(value) > 0) {
+      beforePutRef();
+      this.list.add(index, value);
+      addChange(DataChange.Kind.ADD_REF, value, ownerId);
+      afterPutRef();
+    }
   }
   
   /**
@@ -222,12 +226,13 @@ public abstract class AbstractListData<V, O> {
    * @param position
    */
   public void move(int index, V value, O ownerId) {
-    beforeMove();
-    this.list.remove(value);
-    this.list.add(index, value);
-    addChange(DataChange.Kind.MOVE, value, ownerId);
-    afterMove();
-    
+    if (this.list.indexOf(value) > 0) {
+      beforeMove();
+      this.list.remove(value);
+      this.list.add(index, value);
+      addChange(DataChange.Kind.MOVE, value, ownerId);
+      afterMove();
+    }
   }
   
   /**
@@ -260,6 +265,11 @@ public abstract class AbstractListData<V, O> {
    * @param owner the given owner data
    */
   private void addChange(DataChange.Kind kind, V value, O ownerId) {
-    this.listChanges.add(SimpleDataChange.create(kind, value, this.listOwnerId).build());
+    DataChange<V, O> change = SimpleDataChange.create(kind, value, this.listOwnerId).build();
+    boolean isExisting = this.listChanges.contains(change);
+    if(!isExisting) {
+      this.listChanges.add(SimpleDataChange.create(kind, value, this.listOwnerId).build());
+    }
+    
   }
 }

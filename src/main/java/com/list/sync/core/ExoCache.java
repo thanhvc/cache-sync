@@ -54,5 +54,9 @@ public class ExoCache<K, V> {
   public Set<K> keys() {
     return caching.keySet();
   }
+  
+  public void clear() {
+    this.caching.clear();
+  }
 
 }

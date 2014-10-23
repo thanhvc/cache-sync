@@ -250,8 +250,10 @@ public abstract class AbstractListData<V, O> {
    */
   public void remove(V value, O ownerId) {
     beforeRemove();
-    this.list.remove(value);
-    addChange(DataChange.Kind.DELETE, value, ownerId);
+    boolean hasRemoved = this.list.remove(value);
+    if (hasRemoved) {
+      addChange(DataChange.Kind.DELETE, value, ownerId);
+    }
     afterRemove();
   }
   

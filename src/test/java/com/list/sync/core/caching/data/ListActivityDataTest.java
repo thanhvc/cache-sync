@@ -289,19 +289,106 @@ public class ListActivityDataTest extends TestCase {
     assertEquals(3, data.getChangeList(DataChange.Kind.MOVE).size());
     assertEquals(6, data.getChangeList(DataChange.Kind.ADD).size());
     
-    //remove 5 to top >> expecting 0 at the top
-    data.remove("5", "mary");
+//    //DONE >> Here is improving point. when removing action is coming.
+//    // 2 cases need to consider.
+//    //+ Adds already happened recently(temporary status),....., then REMOVE is next >> All Changes must be clear.
+//    //+ Pushed to storage, some MOVE ready, then REMOVE, All changes must be clear, just keep REMOVE 
+//    
+//    //remove 5 to top >> expecting 0 at the top
+//    data.remove("5", "mary");
+//    top = data.getList().get(0);
+//    assertEquals("0", top);
+//    assertEquals(5, data.getList().size());
+//    assertEquals(2, data.getChangeList(DataChange.Kind.MOVE).size());
+//    assertEquals(5, data.getChangeList(DataChange.Kind.ADD).size());
+//    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
+    
+    
+  }
+  
+  public void testComplexity() {
+    ListActivityData data = new ListActivityData("mary");
+    
+    data.putAtTop("1", "mary");
+    data.putAtTop("0", "mary");
+   
+    assertEquals(2, data.getList().size());
+    String top = data.getList().get(0);
+    assertEquals("0", top);
+    //expecting ADD = 2
+    assertEquals(2, data.getChangeList(DataChange.Kind.ADD).size());
+    
+    //move 1 to top
+    data.moveTop("1", "mary");
+    top = data.getList().get(0);
+    assertEquals("1", top);
+    assertEquals(2, data.getList().size());
+    assertEquals(1, data.getChangeList(DataChange.Kind.MOVE).size());
+    
+    //move 0 to top >> expecting 0 at the top, MOVE size = 2
+    data.moveTop("0", "mary");
     top = data.getList().get(0);
     assertEquals("0", top);
-    assertEquals(5, data.getList().size());
-    assertEquals(3, data.getChangeList(DataChange.Kind.MOVE).size());
-    assertEquals(6, data.getChangeList(DataChange.Kind.ADD).size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
-    //TODO Here is improving point. when removing action is coming.
-    // 2 cases need to consider.
+    assertEquals(2, data.getList().size());
+    assertEquals(2, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(2, data.getChangeList(DataChange.Kind.ADD).size());
     
-    //+ Adds already happened recently(temporary status),....., then REMOVE is next >> All Changes must be clear.
+    //DONE >> Here is improving point. when removing action is coming.
+    // 2 cases need to consider.
+    //+ Adds already happened recently(temporary status),....., then REMOVE is next >> All Changes must be clear. >> NOTHING
     //+ Pushed to storage, some MOVE ready, then REMOVE, All changes must be clear, just keep REMOVE 
+    
+    //remove 5 to top >> expecting 0 at the top
+    data.remove("1", "mary");
+    top = data.getList().get(0);
+    assertEquals("0", top);
+    assertEquals(1, data.getList().size());
+    assertEquals(1, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(1, data.getChangeList(DataChange.Kind.ADD).size());
+    assertEquals(0, data.getChangeList(DataChange.Kind.DELETE).size());
+    
+    
+  }
+  
+  public void testComplexity1() {
+    List<String> list = new LinkedList<String>();
+    list.add("0");
+    list.add("1");
+    
+    ListActivityData data = new ListActivityData(list, "mary");
+    
+    assertEquals(2, data.getList().size());
+    String top = data.getList().get(0);
+    assertEquals("0", top);
+    //expecting ADD = 2
+    assertEquals(0, data.getChangeList(DataChange.Kind.ADD).size());
+    
+    //move 1 to top
+    data.moveTop("1", "mary");
+    top = data.getList().get(0);
+    assertEquals("1", top);
+    assertEquals(1, data.getChangeList(DataChange.Kind.MOVE).size());
+    
+    //move 0 to top >> expecting 0 at the top, MOVE size = 2
+    data.moveTop("0", "mary");
+    top = data.getList().get(0);
+    assertEquals("0", top);
+    assertEquals(2, data.getList().size());
+    assertEquals(2, data.getChangeList(DataChange.Kind.MOVE).size());
+    
+    //DONE >> Here is improving point. when removing action is coming.
+    // 2 cases need to consider.
+    //+ Adds already happened recently(temporary status),....., then REMOVE is next >> All Changes must be clear. >> NOTHING
+    //+ Pushed to storage, some MOVE ready, then REMOVE, All changes must be clear, just keep REMOVE 
+    
+    //remove 5 to top >> expecting 0 at the top
+    data.remove("1", "mary");
+    top = data.getList().get(0);
+    assertEquals("0", top);
+    assertEquals(1, data.getList().size());
+    assertEquals(1, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
+    
     
   }
 }

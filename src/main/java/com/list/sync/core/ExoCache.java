@@ -38,6 +38,10 @@ public class ExoCache<K, V> {
     caching.put(key, value);
   }
   
+  public boolean remove(K key) {
+    return caching.remove(key) != null;
+  }
+  
   
   public boolean containsKey(K key) {
     return caching.containsKey(key);

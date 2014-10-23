@@ -16,6 +16,7 @@
  */
 package com.list.sync.core.caching.data;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,7 +82,9 @@ public abstract class AbstractListData<V, O> {
    * @return the sublist
    */
   public List<V> subList(int from, int to) {
-    return this.list.subList(from, to);
+    if (from >= this.list.size()) return Collections.emptyList();
+    int newTo = Math.min(to, this.list.size());
+    return this.list.subList(from, newTo);
   }
   
   /**
@@ -178,7 +181,7 @@ public abstract class AbstractListData<V, O> {
    * @param value the given value
    */
   public void putRefAtTop(V value, O ownerId) {
-    put(0, value, ownerId);
+    putRef(0, value, ownerId);
   }
   
   /**
@@ -187,12 +190,10 @@ public abstract class AbstractListData<V, O> {
    * @param position
    */
   public void putRef(int index, V value, O ownerId) {
-    if (this.list.indexOf(value) > 0) {
-      beforePutRef();
-      this.list.add(index, value);
-      addChange(DataChange.Kind.ADD_REF, value, ownerId);
-      afterPutRef();
-    }
+    beforePutRef();
+    this.list.add(index, value);
+    addChange(DataChange.Kind.ADD_REF, value, ownerId);
+    afterPutRef();
   }
   
   /**
@@ -268,6 +269,36 @@ public abstract class AbstractListData<V, O> {
    */
   private void addChange(DataChange.Kind kind, V value, O ownerId) {
     DataChange<V, O> change = SimpleDataChange.create(kind, value, this.listOwnerId).build();
+    
+    //TODO Here is improving point. when removing action is coming.
+    //2 cases need to consider.
+    
+    //+ Adds already happened recently(temporary status),....., then REMOVE is next >> All Changes must be clear.
+    //+ Pushed to storage, some MOVE ready, then REMOVE, All changes must be clear, just keep REMOVE
+    if (kind == DataChange.Kind.DELETE) {
+      //test case: ListActivityDataTest#testComplex
+      DataChange<V, O> move = SimpleDataChange.create(DataChange.Kind.MOVE, value, this.listOwnerId).build();
+      boolean hasMove = this.listChanges.contains(move);
+      if (hasMove) {
+        this.listChanges.remove(move);
+      }
+      //test case: ListActivityDataTest#testComplex1
+      DataChange<V, O> add = SimpleDataChange.create(DataChange.Kind.ADD, value, this.listOwnerId).build();
+      boolean hasAdd = this.listChanges.contains(add);
+      if (hasAdd) {
+        this.listChanges.remove(add);
+        return;//don't add remove
+      }
+      
+      //test case: ListActivityDataTest#testComplex1
+      DataChange<V, O> addRef = SimpleDataChange.create(DataChange.Kind.ADD_REF, value, this.listOwnerId).build();
+      boolean hasAddRef = this.listChanges.contains(addRef);
+      if (hasAddRef) {
+        this.listChanges.remove(addRef);
+        return;//don't add remove
+      }
+    }
+    
     boolean isExisting = this.listChanges.contains(change);
     if(!isExisting) {
       this.listChanges.add(SimpleDataChange.create(kind, value, this.listOwnerId).build());

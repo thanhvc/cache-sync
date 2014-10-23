@@ -64,6 +64,70 @@ public class CachedActivityData {
   }
   
   /**
+   * Removes the given activityId
+   * 
+   * @param activityId
+   */
+  public static void removeActivity(String activityId) {
+    ActivityKey key = new ActivityKey(activityId);
+    ActivityData data = activityCaching.get(key);
+    if (data != null) {
+      String posterId = data.build().getUserId();
+      removeStream(posterId, activityId);
+      removeMyConnectionStream(posterId, activityId);
+      
+      //
+      activityCaching.remove(key);
+    }
+  }
+  
+ 
+  
+  /**
+   * Puts the activity to poster's stream
+   * 
+   * @param posterId
+   * @param activity
+   */
+  private static void removeStream(String posterId, String activityId) {
+    removeFromStream(posterId, activityId, ActivityType.FEED);
+    removeFromStream(posterId, activityId, ActivityType.USER);
+  }
+  
+  /**
+   * Puts the activity into the stream
+   * 
+   * @param posterId
+   * @param activity
+   * @param type
+   */
+  private static void removeFromStream(String posterId, String activityId, ActivityType type) {
+    StreamKey newKey = StreamKey.init(posterId).key(type);
+    
+    ListActivityData data = streamCaching.get(newKey);
+    if (data == null) return;
+    
+    data.remove(activityId, posterId);
+  }
+  
+  /**
+   * Puts the activity to poster's connections stream
+   * 
+   * @param posterId
+   * @param activity
+   */
+  private static void removeMyConnectionStream(String posterId, String activityId) {
+    List<IdentityKey> connections = CachedRelationshipData.getConnections(posterId);
+    
+    if (connections == null) return;
+    
+    for(IdentityKey key : connections) {
+      removeFromStream(key.getKey(), activityId, ActivityType.FEED);
+      removeFromStream(key.getKey(), activityId, ActivityType.CONNECTION);
+    }
+  }
+  
+  /**
    * Posts the new comment into the existing activity.
    * 
    * @param posterId
@@ -187,11 +251,10 @@ public class CachedActivityData {
    * @param activity
    */
   private static void putStream(String posterId, ExoSocialActivity activity) {
-    List<String> keys = new LinkedList<String>();
-    keys.add(activity.getId());
     putToStream(posterId, activity, ActivityType.FEED);
     putToStream(posterId, activity, ActivityType.USER);
   }
+  
   /**
    * Puts the activity to poster's connections stream
    * 
@@ -204,10 +267,8 @@ public class CachedActivityData {
     if (connections == null) return;
     
     for(IdentityKey key : connections) {
-      List<String> keys = new LinkedList<String>();
-      keys.add(activity.getId());
-      putToStream(key.getKey(), activity, ActivityType.FEED);
-      putToStream(key.getKey(), activity, ActivityType.CONNECTION);
+      moveTopStreamForConnection(key.getKey(), activity, ActivityType.FEED);
+      moveTopStreamForConnection(key.getKey(), activity, ActivityType.CONNECTION);
     }
   }
 
@@ -392,6 +453,21 @@ public class CachedActivityData {
     ListActivityData data = streamCaching.get(key);
     if (data == null) return null;
     return data.getChangeList();
+  }
+  
+  /**
+   * Gets the iterator of changes list for connection.
+   * 
+   * @param identity.
+   * 
+   * @return
+   */
+  public static List<DataChange<String, String>> connectionsChangeList(Identity identity, DataChange.Kind kind) {
+    
+    StreamKey key = StreamKey.init(identity.getId()).key(ActivityType.CONNECTION);
+    ListActivityData data = streamCaching.get(key);
+    if (data == null) return null;
+    return data.getChangeList(kind);
   }
   
   /**

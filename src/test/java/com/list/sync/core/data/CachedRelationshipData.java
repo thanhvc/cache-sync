@@ -32,17 +32,17 @@ import com.list.sync.core.caching.key.IdentityKey;
  */
 public class CachedRelationshipData {
 
-  public static ExoCache<IdentityKey, List<IdentityKey>> relationshipCaching = new ExoCache<IdentityKey, List<IdentityKey>>();
+  public final static ExoCache<IdentityKey, List<IdentityKey>> relationshipCaching = new ExoCache<IdentityKey, List<IdentityKey>>();
   
   public static void addRelationship(Identity identity1, Identity identity2) {
     IdentityKey key1 = new IdentityKey(identity1.getId());
     List<IdentityKey> relationships1 = relationshipCaching.get(key1);
     if (relationships1 == null) {
       relationships1 = new ArrayList<IdentityKey>();
+      
       relationshipCaching.put(key1, relationships1);
     }
-    
-    IdentityKey key2 = new IdentityKey(identity1.getId());
+    IdentityKey key2 = new IdentityKey(identity2.getId());
     relationships1.add(key2);
     //
     List<IdentityKey> relationships2 = relationshipCaching.get(key2);

@@ -52,7 +52,7 @@ public class CommentTest extends BaseTest {
   @Override
   public void initConnecions() {
     List<IdentityKey> demoConnections = CachedRelationshipData.getConnections(demo);
-    if (demoConnections == null || (demoConnections != null && demoConnections.size() == 0)) {
+    if (demoConnections == null) {
       CachedRelationshipData.addRelationship(demo, john);
       CachedRelationshipData.addRelationship(demo, mary);
     }
@@ -90,18 +90,61 @@ public class CommentTest extends BaseTest {
   }
   
   public void testAddCommentRelationship() throws Exception {
+    CachedActivityData.reset();
+    //
+    ActivityDataBuilder.initMore(1, demo).inject();
+    
     List<DataChange<String, String>> changes = CachedActivityData.feedChangeList(demo);
-    assertEquals(54, changes.size());
+    assertEquals(1, changes.size());
 
-    //TODO NPE here.
-    //changes = CachedActivityData.feedChangeList(john, DataChange.Kind.ADD_REF);
-    //assertEquals(19, changes.size());
+    changes = CachedActivityData.feedChangeList(john, DataChange.Kind.ADD_REF);
+    assertEquals(1, changes.size());
+    
+    CachedActivityData.reset();
   }
+  
+  public void testComplex() throws Exception {
+    CachedActivityData.reset();
+    //
+    ActivityDataBuilder.initMore(2, demo).inject();
+    
+    List<DataChange<String, String>> changes = CachedActivityData.feedChangeList(demo, DataChange.Kind.ADD);
+    assertEquals(2, changes.size());
 
- 
-  
-  
-  
- 
-
+    {
+      //john
+      changes = CachedActivityData.feedChangeList(john, DataChange.Kind.ADD_REF);
+      assertEquals(2, changes.size());
+      
+      changes = CachedActivityData.connectionsChangeList(john, DataChange.Kind.ADD_REF);
+      assertEquals(2, changes.size());
+      
+      changes = CachedActivityData.feedChangeList(john, DataChange.Kind.ADD);
+      assertEquals(0, changes.size());
+    }
+    
+    {
+      //mary
+      changes = CachedActivityData.feedChangeList(mary, DataChange.Kind.ADD_REF);
+      assertEquals(2, changes.size());
+      
+      changes = CachedActivityData.connectionsChangeList(mary, DataChange.Kind.ADD_REF);
+      assertEquals(2, changes.size());
+      
+      changes = CachedActivityData.feedChangeList(mary, DataChange.Kind.ADD);
+      assertEquals(0, changes.size());
+    }
+    
+    //remove here
+    List<ExoSocialActivity> feed = CachedActivityData.feed(demo, 0, 20);
+    ExoSocialActivity first = feed.get(0);
+    CachedActivityData.removeActivity(first.getId());
+    changes = CachedActivityData.feedChangeList(john, DataChange.Kind.ADD_REF);
+    assertEquals(1, changes.size());
+    //
+    changes = CachedActivityData.feedChangeList(john, DataChange.Kind.DELETE);
+    assertEquals(0, changes.size());
+    
+    CachedActivityData.reset();
+  }
 }

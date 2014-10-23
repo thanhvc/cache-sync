@@ -75,7 +75,7 @@ public class SimpleDataChange<V, O> implements DataChange<V, O> {
       return false;
     }
     
-    if (kind != null ? kind != that.kind : that.kind != null) {
+    if (kind != null ? !kind.equals(that.kind) : that.kind != null) {
       return false;
     }
 
@@ -84,7 +84,9 @@ public class SimpleDataChange<V, O> implements DataChange<V, O> {
 
   @Override
   public int hashCode() {
-    return data.hashCode();
+    int result = 31 * (data != null ? data.hashCode() : 0);
+    result = 31 * (kind != null ? kind.hashCode() : 0); 
+    return result;
   }
   
   @Override

@@ -16,6 +16,9 @@
  */
 package com.list.sync.core.data;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.storage.cache.model.data.IdentityData;
@@ -90,5 +93,29 @@ public class CachedIdentityData {
    */
   public static Identity mary() {
     return identityCaching.get(new IdentityKey("mary")).build();
+  }
+  
+  public static Identity get(IdentityKey key) {
+    IdentityData data = identityCaching.get(key);
+    if (data != null) {
+      return data.build();
+    }
+    
+    return null;
+  }
+  /**
+   * Gets all of identity
+   * @return
+   */
+  public static Set<Identity> getIdentities() {
+    Set<Identity> result = new HashSet<Identity>();
+    Set<IdentityKey> keys = identityCaching.keys();
+    
+    for(IdentityKey key : keys) {
+      result.add(get(key));
+    }
+    
+    return result;
+    
   }
 }

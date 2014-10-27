@@ -51,6 +51,13 @@ public interface DataChange<V, O> {
   long getRevision();
   
   /**
+   * Sets the new revision
+   * 
+   * @param newRevision
+   */
+  void setRevision(long newRevision);
+  
+  /**
    * This enumeration lists the known kinds of modifications that can be made to an element.
    * 
    */

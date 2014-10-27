@@ -76,9 +76,13 @@ public class DataChangeMerger {
       }
     }
     DataChange<V, O> change = SimpleDataChange.create(kind, value, ownerId).build();
-    boolean isExisting = listChanges.contains(change);
+    int indexOfFirstOccurrence = listChanges.indexOf(change);
+    boolean isExisting = indexOfFirstOccurrence > -1;
     if(!isExisting) {
       listChanges.add(SimpleDataChange.create(kind, value, ownerId).build());
+    } else {
+      DataChange<V, O> existing = listChanges.get(indexOfFirstOccurrence);
+      existing.setRevision(change.getRevision());
     }
     
   }

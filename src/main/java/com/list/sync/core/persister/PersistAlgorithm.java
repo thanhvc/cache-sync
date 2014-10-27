@@ -14,23 +14,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.list.sync.core.caching.data;
+package com.list.sync.core.persister;
 
-import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
  *          exo@exoplatform.com
- * Oct 20, 2014  
+ * Oct 27, 2014  
  */
-public class ListActivityData extends AbstractListData<String, String> {
-  public ListActivityData(List<String> list) {
-    super(list);
-  }
+public interface PersistAlgorithm {
   
-  public ListActivityData() {
-    super();
-  }
+  /** **/
+  boolean shoudldPersist(int changedSize);
+  
+  /**
+   * Gets the CountDownLatch lock of persister service
+   * 
+   * @return
+   */
+  CountDownLatch getSynchronizationLock();
+  
+  /**
+   * Starts persister component
+   */
+  void start();
+  
+  /**
+   * Stop persister component
+   */
+  void stop();
 
 }

@@ -23,7 +23,6 @@ import java.util.List;
 
 import com.list.sync.core.caching.change.DataChange;
 import com.list.sync.core.caching.change.DataChangeMerger;
-import com.list.sync.core.caching.change.SimpleDataChange;
 
 /**
  * Created by The eXo Platform SAS
@@ -34,8 +33,6 @@ import com.list.sync.core.caching.change.SimpleDataChange;
 public abstract class AbstractListData<V, O> {
   /** defines the list keeps the data **/
   private final List<V> list = new LinkedList<V>();
-  /** defines the owner data **/
-  private final O listOwnerId;
   /** defines the list keeps the changes status **/
   private final List<DataChange<V, O>> listChanges;
   /** define the iterator of changes **/
@@ -48,14 +45,12 @@ public abstract class AbstractListData<V, O> {
    * @param list
    * @param listOwnerId the identityId
    */
-  public AbstractListData(final List<V> list, O listOwnerId) {
+  public AbstractListData(final List<V> list) {
     this.list.addAll(list);
-    this.listOwnerId = listOwnerId;
     this.listChanges = new LinkedList<DataChange<V, O>>();
   }
   
-  public AbstractListData(O listOwnerId) {
-    this.listOwnerId = listOwnerId;
+  public AbstractListData() {
     this.listChanges = new LinkedList<DataChange<V, O>>();
   }
   

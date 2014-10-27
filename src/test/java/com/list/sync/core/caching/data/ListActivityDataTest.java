@@ -44,7 +44,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
     
-    ListActivityData data = new ListActivityData(list, "mary");
+    ListActivityData data = new ListActivityData(list);
     
     data.moveTop("5", "mary");
     String got = data.getList().get(0);
@@ -66,7 +66,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
     
-    ListActivityData data = new ListActivityData(list, "mary");
+    ListActivityData data = new ListActivityData(list);
     
     data.putAtTop("11", "mary");
     String got = data.getList().get(0);
@@ -90,7 +90,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
     
-    ListActivityData data = new ListActivityData(list, "mary");
+    ListActivityData data = new ListActivityData(list);
     //first
     data.putAtTop("11", "mary");
     String got = data.getList().get(0);
@@ -116,7 +116,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
 
-    ListActivityData data = new ListActivityData(list, "mary");
+    ListActivityData data = new ListActivityData(list);
 
     // first
     data.moveTop("5", "mary");
@@ -152,7 +152,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
 
-    ListActivityData data = new ListActivityData(list, "mary");
+    ListActivityData data = new ListActivityData(list);
     
 
     // first
@@ -176,7 +176,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
 
-    ListActivityData data = new ListActivityData(list, "mary");
+    ListActivityData data = new ListActivityData(list);
     
 
     // first
@@ -200,7 +200,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
 
-    ListActivityData data = new ListActivityData(list, "mary");
+    ListActivityData data = new ListActivityData(list);
     
 
     // first
@@ -227,7 +227,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
 
-    ListActivityData data = new ListActivityData(list, "mary");
+    ListActivityData data = new ListActivityData(list);
 
     // first PUT
     data.putAtTop("11", "mary");
@@ -245,7 +245,7 @@ public class ListActivityDataTest extends TestCase {
   }
   
   public void testFromBegin() {
-    ListActivityData data = new ListActivityData("mary");
+    ListActivityData data = new ListActivityData();
     
     data.putAtTop("0", "mary");
     data.putAtTop("1", "mary");
@@ -307,7 +307,7 @@ public class ListActivityDataTest extends TestCase {
   }
   
   public void testComplexity() {
-    ListActivityData data = new ListActivityData("mary");
+    ListActivityData data = new ListActivityData();
     
     data.putAtTop("1", "mary");
     data.putAtTop("0", "mary");
@@ -355,7 +355,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("0");
     list.add("1");
     
-    ListActivityData data = new ListActivityData(list, "mary");
+    ListActivityData data = new ListActivityData(list);
     
     assertEquals(2, data.getList().size());
     String top = data.getList().get(0);

@@ -20,19 +20,25 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.storage.cache.model.key.ActivityType;
 
 import com.list.sync.core.ExoCache;
+import com.list.sync.core.SOCContext;
 import com.list.sync.core.caching.change.DataChange;
 import com.list.sync.core.caching.data.ActivityData;
 import com.list.sync.core.caching.data.ListActivityData;
 import com.list.sync.core.caching.key.ActivityKey;
 import com.list.sync.core.caching.key.IdentityKey;
 import com.list.sync.core.caching.key.StreamKey;
+import com.list.sync.core.persister.Persister;
+import com.list.sync.core.persister.PersisterInvoker;
+import com.list.sync.core.persister.PersisterScheduler;
 
 /**
  * Created by The eXo Platform SAS
@@ -40,11 +46,24 @@ import com.list.sync.core.caching.key.StreamKey;
  *          exo@exoplatform.com
  * Oct 21, 2014  
  */
-public class CachedActivityData {
-
+public class CachedActivityData implements Persister {
+  /** */
   private static ExoCache<StreamKey, ListActivityData> streamCaching = new ExoCache<StreamKey, ListActivityData>();
+  /** */
   private static ExoCache<ActivityKey, ActivityData> activityCaching = new ExoCache<ActivityKey, ActivityData>();
+  /** */
   private static ExoCache<ActivityKey, List<ActivityKey>> commentCaching = new ExoCache<ActivityKey, List<ActivityKey>>();
+  /** */
+  private final PersisterScheduler persisterScheduler;
+  
+  public CachedActivityData() {
+    this.persisterScheduler = PersisterScheduler.init()
+                                                .persister(this)
+                                                .wakeup(SOCContext.getInstance().getIntervalPersistThreshold())
+                                                .timeUnit(TimeUnit.MILLISECONDS)
+                                                .build();
+    this.persisterScheduler.start();
+  }
   
   /**
    * 
@@ -218,7 +237,7 @@ public class CachedActivityData {
     
     ListActivityData data = streamCaching.get(newKey);
     if (data == null) {
-      data = new ListActivityData(ownerId);
+      data = new ListActivityData();
       streamCaching.put(newKey, data);
     }
     
@@ -237,7 +256,7 @@ public class CachedActivityData {
     
     ListActivityData data = streamCaching.get(newKey);
     if (data == null) {
-      data = new ListActivityData(ownerId);
+      data = new ListActivityData();
       streamCaching.put(newKey, data);
     }
     
@@ -284,7 +303,7 @@ public class CachedActivityData {
     
     ListActivityData data = streamCaching.get(newKey);
     if (data == null) {
-      data = new ListActivityData(posterId);
+      data = new ListActivityData();
       streamCaching.put(newKey, data);
     }
     
@@ -538,5 +557,36 @@ public class CachedActivityData {
     streamCaching.clear();
     activityCaching.clear();
     commentCaching.clear();
+  }
+  
+  public PersisterScheduler getScheduler() {
+    return this.persisterScheduler;
+  }
+  
+  public void commit(boolean forceCommit) {
+    persistFixedSize(forceCommit);
+  }
+
+  private void persistFixedSize(boolean forcePersist) {
+    if (forcePersist) {
+      Set<Identity> identities = CachedIdentityData.getIdentities();
+      List<DataChange<String, String>> listChanges = null;
+      List<DataChange<String, String>> newListChanges = null;
+      for (Identity identity : identities) {
+        listChanges = connectionsChangeList(identity);
+        if (listChanges != null && listChanges.size() > 0) {
+          newListChanges = listChanges;
+          listChanges.clear();
+          PersisterInvoker.persist(identity, newListChanges);
+        }
+        //
+        listChanges = feedChangeList(identity);
+        if (listChanges != null && listChanges.size() > 0) {
+          newListChanges = listChanges;
+          listChanges.clear();
+          PersisterInvoker.persist(identity, newListChanges);
+        }
+      }
+    }
   }
 }

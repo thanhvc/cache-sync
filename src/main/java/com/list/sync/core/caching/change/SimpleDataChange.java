@@ -31,7 +31,7 @@ public class SimpleDataChange<V, O> implements DataChange<V, O> {
   
   private final Kind kind;
   
-  private final long revision; 
+  private long revision; 
   
   public static <V,O> Builder<V, O> create(Kind kind, V data, O ownerId) {
     return new Builder<V, O>(kind, data, ownerId);
@@ -58,6 +58,10 @@ public class SimpleDataChange<V, O> implements DataChange<V, O> {
   
   public long getRevision() {
     return this.revision;
+  }
+  
+  public void setRevision(long newRevision) {
+    this.revision = newRevision;
   }
   
   @Override

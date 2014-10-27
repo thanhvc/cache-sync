@@ -18,6 +18,7 @@ package com.list.sync.core.caching;
 
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.CountDownLatch;
 
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 
@@ -82,6 +83,8 @@ public class ActivityTest extends BaseTest {
   }
   
   public void testChanges() throws Exception {
+    CachedActivityData activityData = new CachedActivityData();
+    
     List<DataChange<String, String>> changes = CachedActivityData.feedChangeList(demo);
     assertEquals(69, changes.size());
 
@@ -92,6 +95,14 @@ public class ActivityTest extends BaseTest {
     //
     changes = CachedActivityData.feedChangeList(demo, DataChange.Kind.MOVE);
     assertEquals(19, changes.size());
+
+    //await for finish persistence.
+    CountDownLatch lock = activityData.getScheduler().getSynchronizationLock();
+    System.out.println(lock.getCount());
+    lock.await();
+    
+    changes = CachedActivityData.feedChangeList(demo);
+    assertEquals(0, changes.size());
   }
 
 }

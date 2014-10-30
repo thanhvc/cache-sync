@@ -17,12 +17,10 @@
 package com.list.sync.core.caching.data;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.list.sync.core.caching.change.DataChange;
-import com.list.sync.core.caching.change.DataChangeMerger;
+import com.list.sync.core.caching.change.stream.StreamChange;
 
 /**
  * Created by The eXo Platform SAS
@@ -30,28 +28,23 @@ import com.list.sync.core.caching.change.DataChangeMerger;
  *          exo@exoplatform.com
  * Oct 20, 2014  
  */
-public abstract class AbstractListData<V, O> {
+public abstract class AbstractListData<K, V> {
   /** defines the list keeps the data **/
   private final List<V> list = new LinkedList<V>();
-  /** defines the list keeps the changes status **/
-  private final List<DataChange<V, O>> listChanges;
-  /** define the iterator of changes **/
-  private Iterator<DataChange<V, O>> it;
-  /** define the current change**/
-  private DataChange<V, O> current;
+  protected final K key;
   
   /**
    * 
    * @param list
    * @param listOwnerId the identityId
    */
-  public AbstractListData(final List<V> list) {
+  public AbstractListData(K key, final List<V> list) {
     this.list.addAll(list);
-    this.listChanges = new LinkedList<DataChange<V, O>>();
+    this.key = key;
   }
   
-  public AbstractListData() {
-    this.listChanges = new LinkedList<DataChange<V, O>>();
+  public AbstractListData(K key) {
+    this.key = key;
   }
   
   /**
@@ -83,92 +76,16 @@ public abstract class AbstractListData<V, O> {
     return this.list.subList(from, newTo);
   }
   
-  /**
-   * Gets all of changes via iterator
-   * @return the iterator
-   */
-  public Iterator<DataChange<V, O>> getChanges() {
-    return this.listChanges.iterator();
-  }
-  
-  /**
-   * Gets all of changes list
-   * @return the list
-   */
-  public List<DataChange<V, O>> getChangeList() {
-    return this.listChanges;
-  }
-  
-  /**
-   * Checks has next element or not
-   * 
-   * @param kind the given kind of change
-   * @return
-   */
-  private boolean checkNext(DataChange.Kind kind) {
-    this.current = null;
-    while(this.it.hasNext()) {
-      DataChange<V, O> next = it.next();
-      if (next.getKind().equals(kind)) {
-        this.current = next;
-        break;
-      }
-    }
-    
-    return (this.current != null);
-  }
-  
-
-  /**
-   * Gets the changes by DataChange.Kind
-   * 
-   * @param kind
-   * @return
-   */
-  public Iterator<DataChange<V, O>> getChanges(final DataChange.Kind kind) {
-    this.it = listChanges.iterator();
-    return new Iterator<DataChange<V, O>>() {
-
-      public boolean hasNext() {
-        return checkNext(kind);
-      }
-
-      public DataChange<V, O> next() {
-        return current;
-      }
-
-      public void remove() {
-        throw new UnsupportedOperationException();
-      }
-
-    };
-  }
-  
-  /**
-   * Gets the changes list by DataChange.Kind
-   * 
-   * @param kind
-   * @return
-   */
-  public List<DataChange<V, O>> getChangeList(final DataChange.Kind kind) {
-    List<DataChange<V, O>> filted = new LinkedList<DataChange<V,O>>();
-    Iterator<DataChange<V, O>> iter = getChanges(kind);
-    
-    while(iter.hasNext()) {
-      filted.add(iter.next());
-    }
-    return filted;
-  }
   
   /**
    * Puts the value at the given index
    * @param value
    * @param position
    */
-  public void put(int index, V value, O ownerId) {
+  public void put(int index, V value, String ownerId) {
     beforePut();
     this.list.add(index, value);
-    addChange(DataChange.Kind.ADD, value, ownerId);
+    addChange(StreamChange.Kind.ADD, value, ownerId);
     afterPut();
   }
   
@@ -176,7 +93,7 @@ public abstract class AbstractListData<V, O> {
    * Puts the reference value at the top of list
    * @param value the given value
    */
-  public void putRefAtTop(V value, O ownerId) {
+  public void putRefAtTop(V value, String ownerId) {
     putRef(0, value, ownerId);
   }
   
@@ -185,10 +102,10 @@ public abstract class AbstractListData<V, O> {
    * @param value
    * @param position
    */
-  public void putRef(int index, V value, O ownerId) {
+  public void putRef(int index, V value, String ownerId) {
     beforePutRef();
     this.list.add(index, value);
-    addChange(DataChange.Kind.ADD_REF, value, ownerId);
+    addChange(StreamChange.Kind.ADD_REF, value, ownerId);
     afterPutRef();
   }
   
@@ -196,10 +113,9 @@ public abstract class AbstractListData<V, O> {
    * Puts the value at the top of list
    * @param value the given value
    */
-  public void putAtTop(V value, O ownerId) {
+  public void putAtTop(V value, String ownerId) {
     put(0, value, ownerId);
   }
-  
   
   public void beforePut() {}
   
@@ -222,12 +138,12 @@ public abstract class AbstractListData<V, O> {
    * @param value
    * @param position
    */
-  public void move(int index, V value, O ownerId) {
+  public void move(int index, V value, String ownerId) {
     if (this.list.indexOf(value) > 0) {
       beforeMove();
       this.list.remove(value);
       this.list.add(index, value);
-      addChange(DataChange.Kind.MOVE, value, ownerId);
+      addChange(StreamChange.Kind.MOVE, value, ownerId);
       afterMove();
     }
   }
@@ -236,7 +152,7 @@ public abstract class AbstractListData<V, O> {
    * Moves the value at the top of list
    * @param value the given value
    */
-  public void moveTop(V value, O ownerId) {
+  public void moveTop(V value, String ownerId) {
     move(0, value, ownerId);
   }
   
@@ -245,11 +161,11 @@ public abstract class AbstractListData<V, O> {
    * @param value
    * @param ownerId
    */
-  public void remove(V value, O ownerId) {
+  public void remove(V value, String ownerId) {
     beforeRemove();
     boolean hasRemoved = this.list.remove(value);
     if (hasRemoved) {
-      addChange(DataChange.Kind.DELETE, value, ownerId);
+      addChange(StreamChange.Kind.DELETE, value, ownerId);
     }
     afterRemove();
   }
@@ -263,7 +179,5 @@ public abstract class AbstractListData<V, O> {
    * @param value
    * @param owner the given owner data
    */
-  private void addChange(DataChange.Kind kind, V value, O ownerId) {
-    DataChangeMerger.merge(listChanges, kind, value, ownerId);
-  }
+  protected abstract void addChange(StreamChange.Kind kind, V value, String ownerId);
 }

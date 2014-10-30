@@ -14,32 +14,54 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.list.sync.core.caching.data;
+package com.list.sync.core.caching.change;
 
-import java.util.List;
-
-import com.list.sync.core.caching.change.DataChangeMerger;
-import com.list.sync.core.caching.change.stream.StreamChange;
-import com.list.sync.core.caching.key.StreamKey;
 
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
  *          exo@exoplatform.com
- * Oct 20, 2014  
+ * Oct 28, 2014  
  */
-public class ListActivityData extends AbstractListData<StreamKey, String> {
-  public ListActivityData(StreamKey streamKey, List<String> list) {
-    super(streamKey, list);
+public interface DataChangeListener<M> {
+  /**
+   * An activity is added
+   * @param activity the added model
+   */
+  void onAdd(M target);
+  
+  /**
+   * A comment is added
+   * 
+   * @param activity the parent activity
+   * @param comment the added comment
+   */
+  void onAddRef(M target);
+  
+  /**
+   * A model is removed
+   * @param activity
+   */
+  void onDelete(M target);
+  
+  /**
+   * A model is updated
+   * @param target
+   */
+  void onUpdate(M target);
+  
+  public class Base<M> implements DataChangeListener<M> {
+
+    public void onAdd(M target) {};
+
+    public void onDelete(M target) {}
+
+    public void onUpdate(M target) {}
+
+    public void onAddRef(M target) {}
+
+   
   }
   
-  public ListActivityData(StreamKey streamKey) {
-    super(streamKey);
-  }
-  
-  
-  protected void addChange(StreamChange.Kind kind, String value, String ownerId) {
-    DataChangeMerger.merge(kind, this.key, value, ownerId);
-  }
 
 }

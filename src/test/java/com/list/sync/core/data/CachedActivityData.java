@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -31,6 +31,10 @@ import org.exoplatform.social.core.storage.cache.model.key.ActivityType;
 import com.list.sync.core.ExoCache;
 import com.list.sync.core.SOCContext;
 import com.list.sync.core.caching.change.DataChange;
+import com.list.sync.core.caching.change.DataChangeMerger;
+import com.list.sync.core.caching.change.DataChangeQueue;
+import com.list.sync.core.caching.change.DataContext;
+import com.list.sync.core.caching.change.stream.StreamChange;
 import com.list.sync.core.caching.data.ActivityData;
 import com.list.sync.core.caching.data.ListActivityData;
 import com.list.sync.core.caching.key.ActivityKey;
@@ -72,6 +76,7 @@ public class CachedActivityData implements Persister {
    * @return
    */
   public static ExoSocialActivity saveActivity(String posterId, ExoSocialActivity activity) {
+    
     activity.setId(UUID.randomUUID().toString());
     ActivityKey key = new ActivityKey(activity.getId());
     ActivityData data = new ActivityData(activity);
@@ -79,6 +84,7 @@ public class CachedActivityData implements Persister {
     
     putStream(posterId, activity);
     putMyConnectionStream(posterId, activity);
+    
     return activity;
   }
   
@@ -237,7 +243,7 @@ public class CachedActivityData implements Persister {
     
     ListActivityData data = streamCaching.get(newKey);
     if (data == null) {
-      data = new ListActivityData();
+      data = new ListActivityData(newKey);
       streamCaching.put(newKey, data);
     }
     
@@ -256,7 +262,7 @@ public class CachedActivityData implements Persister {
     
     ListActivityData data = streamCaching.get(newKey);
     if (data == null) {
-      data = new ListActivityData();
+      data = new ListActivityData(newKey);
       streamCaching.put(newKey, data);
     }
     
@@ -303,7 +309,7 @@ public class CachedActivityData implements Persister {
     
     ListActivityData data = streamCaching.get(newKey);
     if (data == null) {
-      data = new ListActivityData();
+      data = new ListActivityData(newKey);
       streamCaching.put(newKey, data);
     }
     
@@ -359,18 +365,16 @@ public class CachedActivityData implements Persister {
     return data.size();
   }
   
+  
   /**
-   * Gets the iterator of changes for feed.
+   * Gets the iterator of changes list for feed.
    * 
    * @param identity
    * @return
    */
-  public static Iterator<DataChange<String, String>> feedChanges(Identity identity) {
-    
+  public static List<StreamChange<StreamKey, String>> feedChangeList(Identity identity) {
     StreamKey key = StreamKey.init(identity.getId()).key(ActivityType.FEED);
-    ListActivityData data = streamCaching.get(key);
-    if (data == null) return null;
-    return data.getChanges();
+    return DataChangeMerger.getChangeList(key);
   }
   
   /**
@@ -379,26 +383,10 @@ public class CachedActivityData implements Persister {
    * @param identity
    * @return
    */
-  public static List<DataChange<String, String>> feedChangeList(Identity identity) {
+  public static List<StreamChange<StreamKey, String>> feedChangeList(Identity identity, StreamChange.Kind kind) {
     
     StreamKey key = StreamKey.init(identity.getId()).key(ActivityType.FEED);
-    ListActivityData data = streamCaching.get(key);
-    if (data == null) return null;
-    return data.getChangeList();
-  }
-  
-  /**
-   * Gets the iterator of changes list for feed.
-   * 
-   * @param identity
-   * @return
-   */
-  public static List<DataChange<String, String>> feedChangeList(Identity identity, DataChange.Kind kind) {
-    
-    StreamKey key = StreamKey.init(identity.getId()).key(ActivityType.FEED);
-    ListActivityData data = streamCaching.get(key);
-    if (data == null) return null;
-    return data.getChangeList(kind);
+    return DataChangeMerger.getChangeList(key, kind);
   }
   
   /**
@@ -447,31 +435,15 @@ public class CachedActivityData implements Persister {
   }
   
   /**
-   * Gets the iterator of changes for connection.
-   * 
-   * @param identity
-   * @return
-   */
-  public static Iterator<DataChange<String, String>> connectionsChanges(Identity identity) {
-    
-    StreamKey key = StreamKey.init(identity.getId()).key(ActivityType.CONNECTION);
-    ListActivityData data = streamCaching.get(key);
-    if (data == null) return null;
-    return data.getChanges();
-  }
-  
-  /**
    * Gets the iterator of changes list for feed.
    * 
    * @param identity
    * @return
    */
-  public static List<DataChange<String, String>> connectionsChangeList(Identity identity) {
+  public static List<StreamChange<StreamKey, String>> connectionsChangeList(Identity identity) {
     
     StreamKey key = StreamKey.init(identity.getId()).key(ActivityType.CONNECTION);
-    ListActivityData data = streamCaching.get(key);
-    if (data == null) return null;
-    return data.getChangeList();
+    return DataChangeMerger.getChangeList(key);
   }
   
   /**
@@ -481,12 +453,10 @@ public class CachedActivityData implements Persister {
    * 
    * @return
    */
-  public static List<DataChange<String, String>> connectionsChangeList(Identity identity, DataChange.Kind kind) {
+  public static List<StreamChange<StreamKey, String>> connectionsChangeList(Identity identity, StreamChange.Kind kind) {
     
     StreamKey key = StreamKey.init(identity.getId()).key(ActivityType.CONNECTION);
-    ListActivityData data = streamCaching.get(key);
-    if (data == null) return null;
-    return data.getChangeList(kind);
+    return DataChangeMerger.getChangeList(key);
   }
   
   /**
@@ -526,7 +496,6 @@ public class CachedActivityData implements Persister {
    * @return
    */
   public static int myActivitiesSize(Identity identity) {
-    
     StreamKey key = StreamKey.init(identity.getId()).key(ActivityType.USER);
     ListActivityData data = streamCaching.get(key);
     
@@ -535,19 +504,14 @@ public class CachedActivityData implements Persister {
   }
   
   /**
-   * Gets the iterator of changes for my activities.
+   * Gets the iterator of changes list for user.
    * 
    * @param identity
-   * @param offset
-   * @param limit
    * @return
    */
-  public static Iterator<DataChange<String, String>> myActivitiesChanges(Identity identity) {
-    
+  public static List<StreamChange<StreamKey, String>> myActivitiesChangeList(Identity identity) {
     StreamKey key = StreamKey.init(identity.getId()).key(ActivityType.USER);
-    ListActivityData data = streamCaching.get(key);
-    if (data == null) return null;
-    return data.getChanges();
+    return DataChangeMerger.getChangeList(key);
   }
   
   /**
@@ -557,6 +521,7 @@ public class CachedActivityData implements Persister {
     streamCaching.clear();
     activityCaching.clear();
     commentCaching.clear();
+    DataChangeMerger.reset();
   }
   
   public PersisterScheduler getScheduler() {
@@ -568,23 +533,15 @@ public class CachedActivityData implements Persister {
   }
 
   private void persistFixedSize(boolean forcePersist) {
-    if (forcePersist) {
-      Set<Identity> identities = CachedIdentityData.getIdentities();
-      List<DataChange<String, String>> listChanges = null;
-      List<DataChange<String, String>> newListChanges = null;
-      for (Identity identity : identities) {
-        listChanges = connectionsChangeList(identity);
-        if (listChanges != null && listChanges.size() > 0) {
-          newListChanges = listChanges;
-          listChanges.clear();
-          PersisterInvoker.persist(identity, newListChanges);
-        }
+    DataContext<StreamChange<StreamKey, String>> context = DataChangeMerger.getDataContext();
+    if (persisterScheduler.shoudldPersist(context.getChangesSize()) || forcePersist) {
+      DataChangeQueue<StreamChange<StreamKey, String>> changes = context.popChanges();
+      
+      if (changes != null && changes.size() > 0) {
+        Map<StreamKey, List<DataChange<StreamChange<StreamKey, String>>>>  map = DataChangeMerger.transformToMap(changes);
         //
-        listChanges = feedChangeList(identity);
-        if (listChanges != null && listChanges.size() > 0) {
-          newListChanges = listChanges;
-          listChanges.clear();
-          PersisterInvoker.persist(identity, newListChanges);
+        for(Map.Entry<StreamKey, List<DataChange<StreamChange<StreamKey, String>>>> e : map.entrySet()) {
+          PersisterInvoker.persist(e.getKey(), e.getValue());
         }
       }
     }

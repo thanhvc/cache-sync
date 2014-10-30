@@ -16,84 +16,130 @@
  */
 package com.list.sync.core.caching.change;
 
+
+
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
  *          exo@exoplatform.com
- * Oct 20, 2014  
+ * Oct 28, 2014  
  */
-public interface DataChange<V, O> {
+public abstract class DataChange<M> {
   
-  /**
-   * Gets the data what wrapper by the change
-   * @return
-   */
-  V getData();
+  final M target;
   
-  /**
-   * Gets the key what wrapper by the change
-   * @return
-   */
-  O getOwnerId();
-  
-  /**
-   * Gets kind of change
-   * @return
-   */
-  Kind getKind();
-  
-  /**
-   * Gets revision of change.
-   * Determines 2 elements have the same priority, 
-   *     base on revision which one is higher priority
-   * @return the revision
-   */
-  long getRevision();
-  
-  /**
-   * Sets the new revision
-   * 
-   * @param newRevision
-   */
-  void setRevision(long newRevision);
-  
-  /**
-   * This enumeration lists the known kinds of modifications that can be made to an element.
-   * 
-   */
-  enum Kind {
-    /**
-     * An addition: the element has been added to the list.
-     */
-    ADD(5),
-    
-    /**
-     * An addition reference: the element has been added to the list.
-     */
-    ADD_REF(4),
-
-    /**
-     * A deletion: the element has been removed from the list.
-     */
-    DELETE(10),
-
-    /**
-     * A move: the element has been moved in the list.
-     */
-    MOVE(1);
-    
-    private final int priority;
-    
-    private Kind(int priority) {
-      this.priority = priority;
+  private DataChange(M target) throws IllegalArgumentException {
+    if (target == null) {
+      throw new IllegalArgumentException("The target must not be null.");
     }
     
-    /**
-     * Gets the priority of change
-     * @return
-     */
-    public int getPriority() {
-      return this.priority;
+    this.target = target;
+  }
+  
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof DataChange)) {
+      return false;
+    }
+
+    DataChange<?> that = (DataChange<?>) o;
+
+    if (target != null ? !target.equals(that.target) : that.target != null) {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  @Override
+  public String toString() {
+    return target.toString();
+  }
+  
+  @Override
+  public int hashCode() {
+    return target.hashCode();
+  }
+  
+  /**
+   * Dispatch the data change to the listener for handling
+   * 
+   * @param listener the listener handling
+   */
+  public abstract void dispatch(DataChangeListener<M> listener);
+  
+  public static final class Add<M> extends DataChange<M> {
+    
+    public Add(M model) {
+      super(model);
+    }
+
+    @Override
+    public void dispatch(DataChangeListener<M> listener) {
+      listener.onAdd(this.target);
+    }
+    
+    @Override
+    public String toString() {
+      return "DataChange.Add[target:" + target + "]";
+    }
+    
+  }
+  
+  public static final class AddRef<M> extends DataChange<M> {
+    
+    public AddRef(M model) {
+      super(model);
+    }
+
+    @Override
+    public void dispatch(DataChangeListener<M> listener) {
+      listener.onAddRef(this.target);
+    }
+    
+    @Override
+    public String toString() {
+      return "DataChange.AddRef[target:" + target + "]";
+    }
+    
+  }
+
+  public static final class Delete<M> extends DataChange<M> {
+
+    public Delete(M model) {
+      super(model);
+    }
+
+    @Override
+    public void dispatch(DataChangeListener<M> listener) {
+      listener.onDelete(this.target);
+    }
+
+    @Override
+    public String toString() {
+      return "DataChange.Delete[target: " + target + " ]";
+    }
+
+  }
+  
+  public static final class Update<M> extends DataChange<M> {
+
+    public Update(M model) {
+      super(model);
+    }
+
+    @Override
+    public void dispatch(DataChangeListener<M> listener) {
+      listener.onUpdate(this.target);
+    }
+
+    @Override
+    public String toString() {
+      return "DataChange.Update[target:" + target + "]";
     }
   }
+
 }

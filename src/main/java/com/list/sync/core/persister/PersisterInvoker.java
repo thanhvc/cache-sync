@@ -23,10 +23,12 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.social.common.service.ProcessContext;
 import org.exoplatform.social.common.service.SocialServiceContext;
 import org.exoplatform.social.common.service.impl.SocialServiceContextImpl;
-import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.storage.streams.SocialChromatticAsyncProcessor;
 
 import com.list.sync.core.caching.change.DataChange;
+import com.list.sync.core.caching.change.stream.StreamChange;
+import com.list.sync.core.caching.change.stream.StreamChangeListener;
+import com.list.sync.core.caching.key.StreamKey;
 
 /**
  * Created by The eXo Platform SAS
@@ -35,6 +37,8 @@ import com.list.sync.core.caching.change.DataChange;
  * Oct 27, 2014  
  */
 public class PersisterInvoker {
+  
+  private static StreamChangeListener listener = new StreamChangeListener();
 
   private static final Log LOG = ExoLogger.getLogger(PersisterInvoker.class);
   /**
@@ -45,30 +49,35 @@ public class PersisterInvoker {
    * @param mentioners NULL is empty mentioner.
    * @return
    */
-  public static <V, O> void persist(Identity identity, List<DataChange<V, O>> listChanges) {
+  public static <V, O> void persist(StreamKey key, List<DataChange<StreamChange<StreamKey, String>>> listChanges) {
     if (listChanges == null || listChanges.size() == 0) return;
     SocialServiceContext ctx = SocialServiceContextImpl.getInstance();
     StreamProcessContext processCtx = StreamProcessContext.getIntance(StreamProcessContext.PERSIST_ACTIVITIES_STREAM_PROCESS, SocialServiceContextImpl.getInstance());
     try {
-      ctx.getServiceExecutor().async(doPersist(identity, listChanges), processCtx);
+      ctx.getServiceExecutor().async(doPersist(key, listChanges), processCtx);
     } finally {
     }
   }
   
-  private static <V, O> SocialChromatticAsyncProcessor doPersist(final Identity identity, final List<DataChange<V, O>> listChanges) {
+  private static <V, O> SocialChromatticAsyncProcessor doPersist(final StreamKey key, final List<DataChange<StreamChange<StreamKey, String>>> listChanges) {
     return new SocialChromatticAsyncProcessor(SocialServiceContextImpl.getInstance()) {
 
       @Override
       protected ProcessContext execute(ProcessContext processContext) throws Exception {
-        try {
-          LOG.info("persist with " + identity.getRemoteId());
-          for(DataChange<V, O> change : listChanges) {
-            LOG.info("changes " + change.toString());
-          }
-        } finally {
-          listChanges.clear();
+        System.out.println(Thread.currentThread().getName() + " - persist with " + key.handle());
+        for (DataChange<StreamChange<StreamKey, String>> change : listChanges) {
+          //System.out.println(change.toString());
+          change.dispatch(listener);
         }
         return processContext;
+      }
+      
+      @Override
+      public void start(ProcessContext processContext) {}
+      
+      @Override
+      public void end(ProcessContext processContext) {
+        
       }
 
     };

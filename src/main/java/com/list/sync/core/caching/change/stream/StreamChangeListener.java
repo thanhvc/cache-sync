@@ -14,32 +14,35 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.list.sync.core.caching.data;
+package com.list.sync.core.caching.change.stream;
 
-import java.util.List;
-
-import com.list.sync.core.caching.change.DataChangeMerger;
-import com.list.sync.core.caching.change.stream.StreamChange;
+import com.list.sync.core.caching.change.DataChangeListener;
 import com.list.sync.core.caching.key.StreamKey;
+
 
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
  *          exo@exoplatform.com
- * Oct 20, 2014  
+ * Oct 30, 2014  
  */
-public class ListActivityData extends AbstractListData<StreamKey, String> {
-  public ListActivityData(StreamKey streamKey, List<String> list) {
-    super(streamKey, list);
+public class StreamChangeListener implements DataChangeListener<StreamChange<StreamKey, String>> {
+
+  public void onAdd(StreamChange<StreamKey, String> target) {
+    System.out.println(Thread.currentThread().getName() + " - ADD - " + target.toString());
+    
   }
-  
-  public ListActivityData(StreamKey streamKey) {
-    super(streamKey);
+
+  public void onAddRef(StreamChange<StreamKey, String> target) {
+    System.out.println(Thread.currentThread().getName() + " - ADD_REF - " + target.toString());
   }
-  
-  
-  protected void addChange(StreamChange.Kind kind, String value, String ownerId) {
-    DataChangeMerger.merge(kind, this.key, value, ownerId);
+
+  public void onDelete(StreamChange<StreamKey, String> target) {
+    System.out.println(Thread.currentThread().getName() + " - REMOVE - " + target.toString());
+  }
+
+  public void onUpdate(StreamChange<StreamKey, String> target) {
+    System.out.println(Thread.currentThread().getName() + " - UPDATE - " + target.toString());
   }
 
 }

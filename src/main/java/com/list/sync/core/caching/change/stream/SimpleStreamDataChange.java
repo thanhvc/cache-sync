@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.list.sync.core.caching.change;
+package com.list.sync.core.caching.change.stream;
 
 
 /**
@@ -23,36 +23,43 @@ package com.list.sync.core.caching.change;
  *          exo@exoplatform.com
  * Oct 20, 2014  
  */
-public class SimpleDataChange<V, O> implements DataChange<V, O> {
+public class SimpleStreamDataChange<K, V> implements StreamChange<K, V> {
   
-  private final V data;
+  private final K streamKey;
   
-  private final O ownerId;
+  private final V handle;
+  
+  private final String ownerId;
   
   private final Kind kind;
   
   private long revision; 
   
-  public static <V,O> Builder<V, O> create(Kind kind, V data, O ownerId) {
-    return new Builder<V, O>(kind, data, ownerId);
+  public static <K, V> Builder<K, V> create(Kind kind, K streamKey, V handle, String ownerId) {
+    return new Builder<K, V>(kind, streamKey, handle, ownerId);
   }
   
-  public SimpleDataChange(Builder<V, O> builder) {
+  public SimpleStreamDataChange(Builder<K, V> builder) {
+    this.streamKey = builder.streamKey;
     this.kind = builder.kind;
-    this.data = builder.data;
+    this.handle = builder.id;
     this.ownerId = builder.ownerId;
     this.revision = builder.revision;
   }
 
-  public V getData() {
-    return this.data;
+  public K getKey() {
+    return this.streamKey;
   }
   
-  public O getOwnerId() {
+  public V getHandle() {
+    return this.handle;
+  }
+  
+  public String getOwnerId() {
     return this.ownerId;
   }
   
-  public DataChange.Kind getKind() {
+  public StreamChange.Kind getKind() {
     return this.kind;
   }
   
@@ -69,17 +76,21 @@ public class SimpleDataChange<V, O> implements DataChange<V, O> {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SimpleDataChange)) {
+    if (!(o instanceof SimpleStreamDataChange)) {
       return false;
     }
 
-    SimpleDataChange<?, ?> that = (SimpleDataChange<?, ?>) o;
+    SimpleStreamDataChange<?, ?> that = (SimpleStreamDataChange<?, ?>) o;
 
-    if (data != null ? !data.equals(that.data) : that.data != null) {
+    if (handle != null ? !handle.equals(that.handle) : that.handle != null) {
       return false;
     }
     
     if (kind != null ? !kind.equals(that.kind) : that.kind != null) {
+      return false;
+    }
+    
+    if (streamKey != null ? !streamKey.equals(that.streamKey) : that.streamKey != null) {
       return false;
     }
 
@@ -88,39 +99,42 @@ public class SimpleDataChange<V, O> implements DataChange<V, O> {
 
   @Override
   public int hashCode() {
-    int result = 31 * (data != null ? data.hashCode() : 0);
+    int result = 31 * (handle != null ? handle.hashCode() : 0);
     result = 31 * (kind != null ? kind.hashCode() : 0); 
     return result;
   }
   
   @Override
   public String toString() {
-    return "SimpleDataChange[data = " + this.data + ", kind = " + this.kind.toString() + ", revision = " + this.revision + "]";
+    return "SimpleDataChange[streamKey = " + streamKey.toString() + "id = " + this.handle + ", kind = " + this.kind.toString() + ", revision = " + this.revision + "]";
   }
   
-  public static class Builder<V, O> {
-    public final V data;
+  public static class Builder<K, V> {
+    public final K streamKey;
     
-    public final O ownerId;
+    public final V id;
+    
+    public final String ownerId;
     
     public final Kind kind;
     
     public long revision; 
     
-    public Builder(Kind kind, V data, O ownerId) {
+    public Builder(Kind kind, K streamKey, V id, String ownerId) {
+      this.streamKey = streamKey;
       this.kind = kind;
-      this.data = data;
+      this.id = id;
       this.ownerId = ownerId;
       this.revision = System.currentTimeMillis();
     }
     
-    public Builder<V, O> revision(long revision) {
+    public Builder<K, V> revision(long revision) {
       this.revision = revision;
       return this;
     }
     
-    public SimpleDataChange<V, O> build() {
-      return new SimpleDataChange<V, O>(this);
+    public StreamChange<K, V> build() {
+      return new SimpleStreamDataChange<K, V>(this);
     }
   }
   

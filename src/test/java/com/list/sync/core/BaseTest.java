@@ -20,7 +20,6 @@ import junit.framework.TestCase;
 
 import org.exoplatform.social.core.identity.model.Identity;
 
-import com.list.sync.core.data.CachedActivityData;
 import com.list.sync.core.data.CachedIdentityData;
 
 /**
@@ -40,11 +39,6 @@ public abstract class BaseTest extends TestCase {
     super.setUp();
     initData();
     initConnecions();
-  }
-  
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
   }
   
   public abstract void initData();

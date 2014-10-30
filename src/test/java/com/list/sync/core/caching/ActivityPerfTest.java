@@ -30,18 +30,19 @@ import com.list.sync.core.caching.key.StreamKey;
 import com.list.sync.core.data.ActivityDataBuilder;
 import com.list.sync.core.data.CachedActivityData;
 import com.list.sync.core.data.CommentDataBuilder;
+
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
  *          exo@exoplatform.com
- * Oct 20, 2014  
+ * Oct 30, 2014  
  */
-public class ActivityTest extends BaseTest {
-  
+public class ActivityPerfTest extends BaseTest {
+  final int number = 6000;
   @Override
   public void initData() {
     if (CachedActivityData.feedSize(demo) == 0) {
-      ActivityDataBuilder.initMore(50, demo).inject();
+      ActivityDataBuilder.initMore(number, demo).inject();
       List<ExoSocialActivity> feed = CachedActivityData.feed(demo, 0, 20);
       ListIterator<ExoSocialActivity> it = feed.listIterator(feed.size() - 1);
       while (it.hasPrevious()) {
@@ -54,46 +55,15 @@ public class ActivityTest extends BaseTest {
   @Override
   public void initConnecions() {}
   
-  public void testFeed() {
-    List<ExoSocialActivity> feed = CachedActivityData.feed(demo, 0, 20);
-    assertEquals(20, feed.size());
-  }
-  
-  public void testFeedLoadMore() {
-    List<ExoSocialActivity> feed = CachedActivityData.feed(demo, 20, 20);
-    assertEquals(20, feed.size());
-  }
-  
-  public void testFeedSize() {
-    int got = CachedActivityData.feedSize(demo);
-    assertEquals(50, got);
-    
-  }
-  
-  public void testOwner() {
-    List<ExoSocialActivity> got = CachedActivityData.myActivities(demo, 0, 20);
-    assertEquals(20, got.size());
-  }
-  
-  public void testOwnerLoadMore() {
-    List<ExoSocialActivity> got = CachedActivityData.myActivities(demo, 20, 20);
-    assertEquals(20, got.size());
-  }
-  
-  public void testOwnerSize() {
-    int got = CachedActivityData.myActivitiesSize(demo);
-    assertEquals(50, got);
-  }
-  
   public void testChanges() throws Exception {
     CachedActivityData activityData = new CachedActivityData();
     
     List<StreamChange<StreamKey, String>> changes = CachedActivityData.feedChangeList(demo);
-    assertEquals(69, changes.size());
+    assertEquals(number + 19, changes.size());
 
     //
     changes = CachedActivityData.feedChangeList(demo, StreamChange.Kind.ADD);
-    assertEquals(50, changes.size());
+    assertEquals(number, changes.size());
 
     //
     changes = CachedActivityData.feedChangeList(demo, StreamChange.Kind.MOVE);
@@ -102,9 +72,12 @@ public class ActivityTest extends BaseTest {
     //await for finish persistence.
     CountDownLatch lock = activityData.getScheduler().getSynchronizationLock();
     System.out.println("Change size:" + DataChangeMerger.getSize());
-    lock.await(1500, TimeUnit.MILLISECONDS);
+    lock.await(2000, TimeUnit.MILLISECONDS);
     
     changes = CachedActivityData.feedChangeList(demo);
+    assertEquals(0, changes.size());
+    
+    changes = CachedActivityData.myActivitiesChangeList(demo);
     assertEquals(0, changes.size());
   }
   

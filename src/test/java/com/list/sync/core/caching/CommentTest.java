@@ -18,12 +18,16 @@ package com.list.sync.core.caching;
 
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 
 import com.list.sync.core.BaseTest;
-import com.list.sync.core.caching.change.DataChange;
+import com.list.sync.core.caching.change.DataChangeMerger;
+import com.list.sync.core.caching.change.stream.StreamChange;
 import com.list.sync.core.caching.key.IdentityKey;
+import com.list.sync.core.caching.key.StreamKey;
 import com.list.sync.core.data.ActivityDataBuilder;
 import com.list.sync.core.data.CachedActivityData;
 import com.list.sync.core.data.CachedRelationshipData;
@@ -35,6 +39,11 @@ import com.list.sync.core.data.CommentDataBuilder;
  * Oct 20, 2014  
  */
 public class CommentTest extends BaseTest {
+  
+  @Override
+  protected void tearDown() throws Exception {
+    DataChangeMerger.reset();
+  }
   
   @Override
   public void initData() {
@@ -78,11 +87,11 @@ public class CommentTest extends BaseTest {
       first = feed.get(0);
       assertTrue(first.getTitle().indexOf("48") > 0);
       
-      List<DataChange<String, String>> changes = CachedActivityData.feedChangeList(demo);
+      List<StreamChange<StreamKey, String>> changes = CachedActivityData.feedChangeList(demo);
       assertEquals(69, changes.size());
 
       //
-      changes = CachedActivityData.feedChangeList(demo, DataChange.Kind.MOVE);
+      changes = CachedActivityData.feedChangeList(demo, StreamChange.Kind.MOVE);
       assertEquals(19, changes.size());
     }
     
@@ -94,13 +103,22 @@ public class CommentTest extends BaseTest {
     //
     ActivityDataBuilder.initMore(1, demo).inject();
     
-    List<DataChange<String, String>> changes = CachedActivityData.feedChangeList(demo);
+    List<StreamChange<StreamKey, String>> changes = CachedActivityData.feedChangeList(demo);
+    
+    printDebug(changes);
+    
     assertEquals(1, changes.size());
 
-    changes = CachedActivityData.feedChangeList(john, DataChange.Kind.ADD_REF);
+    changes = CachedActivityData.feedChangeList(john, StreamChange.Kind.ADD_REF);
     assertEquals(1, changes.size());
     
     CachedActivityData.reset();
+  }
+  
+  private void printDebug(List<StreamChange<StreamKey, String>> changes) {
+    for(StreamChange<StreamKey, String> change : changes) {
+      System.out.println(change.toString());
+    }
   }
   
   public void testComplex() throws Exception {
@@ -108,30 +126,30 @@ public class CommentTest extends BaseTest {
     //
     ActivityDataBuilder.initMore(2, demo).inject();
     
-    List<DataChange<String, String>> changes = CachedActivityData.feedChangeList(demo, DataChange.Kind.ADD);
+    List<StreamChange<StreamKey, String>> changes = CachedActivityData.feedChangeList(demo, StreamChange.Kind.ADD);
     assertEquals(2, changes.size());
 
     {
       //john
-      changes = CachedActivityData.feedChangeList(john, DataChange.Kind.ADD_REF);
+      changes = CachedActivityData.feedChangeList(john, StreamChange.Kind.ADD_REF);
       assertEquals(2, changes.size());
       
-      changes = CachedActivityData.connectionsChangeList(john, DataChange.Kind.ADD_REF);
+      changes = CachedActivityData.connectionsChangeList(john, StreamChange.Kind.ADD_REF);
       assertEquals(2, changes.size());
       
-      changes = CachedActivityData.feedChangeList(john, DataChange.Kind.ADD);
+      changes = CachedActivityData.feedChangeList(john, StreamChange.Kind.ADD);
       assertEquals(0, changes.size());
     }
     
     {
       //mary
-      changes = CachedActivityData.feedChangeList(mary, DataChange.Kind.ADD_REF);
+      changes = CachedActivityData.feedChangeList(mary, StreamChange.Kind.ADD_REF);
       assertEquals(2, changes.size());
       
-      changes = CachedActivityData.connectionsChangeList(mary, DataChange.Kind.ADD_REF);
+      changes = CachedActivityData.connectionsChangeList(mary, StreamChange.Kind.ADD_REF);
       assertEquals(2, changes.size());
       
-      changes = CachedActivityData.feedChangeList(mary, DataChange.Kind.ADD);
+      changes = CachedActivityData.feedChangeList(mary, StreamChange.Kind.ADD);
       assertEquals(0, changes.size());
     }
     
@@ -139,12 +157,49 @@ public class CommentTest extends BaseTest {
     List<ExoSocialActivity> feed = CachedActivityData.feed(demo, 0, 20);
     ExoSocialActivity first = feed.get(0);
     CachedActivityData.removeActivity(first.getId());
-    changes = CachedActivityData.feedChangeList(john, DataChange.Kind.ADD_REF);
+    changes = CachedActivityData.feedChangeList(john, StreamChange.Kind.ADD_REF);
     assertEquals(1, changes.size());
     //
-    changes = CachedActivityData.feedChangeList(john, DataChange.Kind.DELETE);
+    changes = CachedActivityData.feedChangeList(john, StreamChange.Kind.DELETE);
     assertEquals(0, changes.size());
     
     CachedActivityData.reset();
+  }
+  
+  public void testChangesComplex1() throws Exception {
+    CachedActivityData.reset();
+    CachedActivityData activityData = new CachedActivityData();
+    //
+    ActivityDataBuilder.initMore(2, demo).inject();
+    
+    List<StreamChange<StreamKey, String>> changes = CachedActivityData.feedChangeList(demo, StreamChange.Kind.ADD);
+    assertEquals(2, changes.size());
+
+    {
+      //john
+      changes = CachedActivityData.feedChangeList(john, StreamChange.Kind.ADD_REF);
+      assertEquals(2, changes.size());
+      
+      changes = CachedActivityData.connectionsChangeList(john, StreamChange.Kind.ADD_REF);
+      assertEquals(2, changes.size());
+      
+      changes = CachedActivityData.feedChangeList(john, StreamChange.Kind.ADD);
+      assertEquals(0, changes.size());
+    }
+    
+    //await for finish persistence.
+    CountDownLatch lock = activityData.getScheduler().getSynchronizationLock();
+    System.out.println("Change size:" + DataChangeMerger.getSize());
+    lock.await(1500, TimeUnit.MILLISECONDS);
+    
+    changes = CachedActivityData.feedChangeList(demo);
+    assertEquals(0, changes.size());
+    
+    changes = CachedActivityData.feedChangeList(john);
+    assertEquals(0, changes.size());
+    
+    changes = CachedActivityData.feedChangeList(mary);
+    assertEquals(0, changes.size());
+    
   }
 }

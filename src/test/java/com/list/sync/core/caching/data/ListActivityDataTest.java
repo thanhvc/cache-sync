@@ -19,7 +19,11 @@ package com.list.sync.core.caching.data;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.list.sync.core.caching.change.DataChange;
+import org.exoplatform.social.core.storage.cache.model.key.ActivityType;
+
+import com.list.sync.core.caching.change.DataChangeMerger;
+import com.list.sync.core.caching.change.stream.StreamChange;
+import com.list.sync.core.caching.key.StreamKey;
 
 import junit.framework.TestCase;
 
@@ -30,6 +34,12 @@ import junit.framework.TestCase;
  * Oct 22, 2014  
  */
 public class ListActivityDataTest extends TestCase {
+  private final StreamKey key = StreamKey.init("mary").key(ActivityType.FEED);
+  
+  @Override
+  protected void tearDown() throws Exception {
+    DataChangeMerger.reset();
+  }
 
   public void testMoveUp() {
     List<String> list = new LinkedList<String>();
@@ -44,7 +54,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
     
-    ListActivityData data = new ListActivityData(list);
+    ListActivityData data = new ListActivityData(key, list);
     
     data.moveTop("5", "mary");
     String got = data.getList().get(0);
@@ -66,7 +76,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
     
-    ListActivityData data = new ListActivityData(list);
+    ListActivityData data = new ListActivityData(key, list);
     
     data.putAtTop("11", "mary");
     String got = data.getList().get(0);
@@ -90,7 +100,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
     
-    ListActivityData data = new ListActivityData(list);
+    ListActivityData data = new ListActivityData(key, list);
     //first
     data.putAtTop("11", "mary");
     String got = data.getList().get(0);
@@ -98,9 +108,7 @@ public class ListActivityDataTest extends TestCase {
     assertEquals(11, data.getList().size());
     //second
     data.putAtTop("11", "mary");
-    assertEquals(1, data.getChangeList().size());
-    
-    assertEquals(1, data.getChangeList(DataChange.Kind.ADD).size());
+    assertEquals(1, DataChangeMerger.getSize());
   }
   
   public void testDoubleMoveUp() {
@@ -116,7 +124,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
 
-    ListActivityData data = new ListActivityData(list);
+    ListActivityData data = new ListActivityData(key, list);
 
     // first
     data.moveTop("5", "mary");
@@ -124,19 +132,19 @@ public class ListActivityDataTest extends TestCase {
     assertEquals("5", got);
     assertEquals(10, data.getList().size());
 
-    assertEquals(1, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
 
     // second
     data.moveTop("2", "mary");
     got = data.getList().get(0);
     assertEquals("2", got);
-    assertEquals(2, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(2, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
     
     //one more
     data.moveTop("5", "mary");
     got = data.getList().get(0);
     assertEquals("5", got);
-    assertEquals(2, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(2, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
   }
   
   public void testRemove() {
@@ -152,13 +160,13 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
 
-    ListActivityData data = new ListActivityData(list);
+    ListActivityData data = new ListActivityData(key, list);
     
 
     // first
     data.remove("3", "mary");
     assertEquals(9, data.getList().size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.DELETE).size());
     
     
   }
@@ -176,13 +184,12 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
 
-    ListActivityData data = new ListActivityData(list);
-    
+    ListActivityData data = new ListActivityData(key, list);
 
     // first
     data.remove("9", "mary");
     assertEquals(9, data.getList().size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.DELETE).size());
     String got = data.getList().get(0);
     assertEquals("8", got);
   }
@@ -200,17 +207,16 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
 
-    ListActivityData data = new ListActivityData(list);
-    
+    ListActivityData data = new ListActivityData(key, list);
 
     // first
     data.remove("3", "mary");
     assertEquals(9, data.getList().size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.DELETE).size());
     //second
     data.remove("3", "mary");
     assertEquals(9, data.getList().size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.DELETE).size());
     
   }
   
@@ -227,7 +233,7 @@ public class ListActivityDataTest extends TestCase {
     list.add("1");
     list.add("0");
 
-    ListActivityData data = new ListActivityData(list);
+    ListActivityData data = new ListActivityData(key, list);
 
     // first PUT
     data.putAtTop("11", "mary");
@@ -236,16 +242,16 @@ public class ListActivityDataTest extends TestCase {
     
     data.remove("3", "mary");
     assertEquals(10, data.getList().size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.DELETE).size());
     //second MOVE
     data.remove("3", "mary");
     assertEquals(10, data.getList().size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.DELETE).size());
     //third MOVE
   }
   
   public void testFromBegin() {
-    ListActivityData data = new ListActivityData();
+    ListActivityData data = new ListActivityData(key);
     
     data.putAtTop("0", "mary");
     data.putAtTop("1", "mary");
@@ -257,37 +263,37 @@ public class ListActivityDataTest extends TestCase {
     String top = data.getList().get(0);
     assertEquals("5", top);
     //expecting ADD = 6
-    assertEquals(6, data.getChangeList(DataChange.Kind.ADD).size());
+    assertEquals(6, DataChangeMerger.getChangeList(StreamChange.Kind.ADD).size());
     
     //move 0 to top
     data.moveTop("0", "mary");
     top = data.getList().get(0);
     assertEquals("0", top);
     assertEquals(6, data.getList().size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
     
     //move 1 to top
     data.moveTop("1", "mary");
     top = data.getList().get(0);
     assertEquals("1", top);
     assertEquals(6, data.getList().size());
-    assertEquals(2, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(2, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
     
     //move 0 to top >> expecting 0 at the top, MOVE size = 2
     data.moveTop("0", "mary");
     top = data.getList().get(0);
     assertEquals("0", top);
     assertEquals(6, data.getList().size());
-    assertEquals(2, data.getChangeList(DataChange.Kind.MOVE).size());
-    assertEquals(6, data.getChangeList(DataChange.Kind.ADD).size());
+    assertEquals(2, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
+    assertEquals(6, DataChangeMerger.getChangeList(StreamChange.Kind.ADD).size());
     
     //move 5 to top >> expecting 0 at the top, MOVE size = 3
     data.moveTop("5", "mary");
     top = data.getList().get(0);
     assertEquals("5", top);
     assertEquals(6, data.getList().size());
-    assertEquals(3, data.getChangeList(DataChange.Kind.MOVE).size());
-    assertEquals(6, data.getChangeList(DataChange.Kind.ADD).size());
+    assertEquals(3, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
+    assertEquals(6, DataChangeMerger.getChangeList(StreamChange.Kind.ADD).size());
     
 //    //DONE >> Here is improving point. when removing action is coming.
 //    // 2 cases need to consider.
@@ -302,12 +308,10 @@ public class ListActivityDataTest extends TestCase {
 //    assertEquals(2, data.getChangeList(DataChange.Kind.MOVE).size());
 //    assertEquals(5, data.getChangeList(DataChange.Kind.ADD).size());
 //    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
-    
-    
   }
   
   public void testComplexity() {
-    ListActivityData data = new ListActivityData();
+    ListActivityData data = new ListActivityData(key);
     
     data.putAtTop("1", "mary");
     data.putAtTop("0", "mary");
@@ -316,22 +320,22 @@ public class ListActivityDataTest extends TestCase {
     String top = data.getList().get(0);
     assertEquals("0", top);
     //expecting ADD = 2
-    assertEquals(2, data.getChangeList(DataChange.Kind.ADD).size());
+    assertEquals(2, DataChangeMerger.getChangeList(StreamChange.Kind.ADD).size());
     
     //move 1 to top
     data.moveTop("1", "mary");
     top = data.getList().get(0);
     assertEquals("1", top);
     assertEquals(2, data.getList().size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
     
     //move 0 to top >> expecting 0 at the top, MOVE size = 2
     data.moveTop("0", "mary");
     top = data.getList().get(0);
     assertEquals("0", top);
     assertEquals(2, data.getList().size());
-    assertEquals(2, data.getChangeList(DataChange.Kind.MOVE).size());
-    assertEquals(2, data.getChangeList(DataChange.Kind.ADD).size());
+    assertEquals(2, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
+    assertEquals(2, DataChangeMerger.getChangeList(StreamChange.Kind.ADD).size());
     
     //DONE >> Here is improving point. when removing action is coming.
     // 2 cases need to consider.
@@ -343,9 +347,9 @@ public class ListActivityDataTest extends TestCase {
     top = data.getList().get(0);
     assertEquals("0", top);
     assertEquals(1, data.getList().size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.MOVE).size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.ADD).size());
-    assertEquals(0, data.getChangeList(DataChange.Kind.DELETE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.ADD).size());
+    assertEquals(0, DataChangeMerger.getChangeList(StreamChange.Kind.DELETE).size());
     
     
   }
@@ -355,26 +359,26 @@ public class ListActivityDataTest extends TestCase {
     list.add("0");
     list.add("1");
     
-    ListActivityData data = new ListActivityData(list);
+    ListActivityData data = new ListActivityData(key, list);
     
     assertEquals(2, data.getList().size());
     String top = data.getList().get(0);
     assertEquals("0", top);
     //expecting ADD = 2
-    assertEquals(0, data.getChangeList(DataChange.Kind.ADD).size());
+    assertEquals(0, DataChangeMerger.getChangeList(StreamChange.Kind.ADD).size());
     
     //move 1 to top
     data.moveTop("1", "mary");
     top = data.getList().get(0);
     assertEquals("1", top);
-    assertEquals(1, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
     
     //move 0 to top >> expecting 0 at the top, MOVE size = 2
     data.moveTop("0", "mary");
     top = data.getList().get(0);
     assertEquals("0", top);
     assertEquals(2, data.getList().size());
-    assertEquals(2, data.getChangeList(DataChange.Kind.MOVE).size());
+    assertEquals(2, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
     
     //DONE >> Here is improving point. when removing action is coming.
     // 2 cases need to consider.
@@ -386,8 +390,8 @@ public class ListActivityDataTest extends TestCase {
     top = data.getList().get(0);
     assertEquals("0", top);
     assertEquals(1, data.getList().size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.MOVE).size());
-    assertEquals(1, data.getChangeList(DataChange.Kind.DELETE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.MOVE).size());
+    assertEquals(1, DataChangeMerger.getChangeList(StreamChange.Kind.DELETE).size());
     
     
   }

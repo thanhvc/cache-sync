@@ -51,6 +51,7 @@ public class PersisterScheduler implements PersistAlgorithm, Runnable {
   public static Builder init() {
     return new Builder();
   }
+  
   public PersisterScheduler(Builder builder) {
     this.wakeupInterval = builder.wakeupInterval;
     this.persister = builder.persister;
@@ -93,8 +94,6 @@ public class PersisterScheduler implements PersistAlgorithm, Runnable {
       persister.commit(true);
     } catch (Throwable t) {
       LOG.warn("Persist task encountered an unexpected error", t);
-    } finally {
-      countDownLatch.countDown();
     }
   }
   

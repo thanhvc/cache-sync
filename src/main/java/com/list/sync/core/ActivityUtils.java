@@ -14,32 +14,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.list.sync.core.caching.data;
+package com.list.sync.core;
 
-import java.util.List;
-
-import com.list.sync.core.caching.change.DataChangeMerger;
-import com.list.sync.core.caching.change.stream.StreamChange;
-import com.list.sync.core.caching.key.StreamKey;
+import java.lang.ref.SoftReference;
 
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
  *          exo@exoplatform.com
- * Oct 20, 2014  
+ * Oct 28, 2014  
  */
-public class ListActivityData extends AbstractListData<StreamKey, String> {
-  public ListActivityData(StreamKey streamKey, List<String> list) {
-    super(streamKey, list);
-  }
+public class ActivityUtils {
   
-  public ListActivityData(StreamKey streamKey) {
-    super(streamKey);
-  }
-  
-  
-  protected void addChange(StreamChange.Kind kind, String value, String ownerId) {
-    DataChangeMerger.merge(kind, this.key, value, ownerId);
+  /**
+   * wrap the object into soft reference.
+   * @param value
+   * @return
+   */
+  public static <T> SoftReference<T> softReference(T value) {
+    return new SoftReference<T>(value);
   }
 
 }
